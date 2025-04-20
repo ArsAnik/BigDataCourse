@@ -3,11 +3,49 @@
 
 # RideCleanisingExercise
 
+Задача упражнения  — очистить поток событий TaxiRide, удалив события, которые начинаются или заканчиваются за пределами Нью-Йорка.
+
 Класс утилиты GeoUtils предоставляет статический метод isInNYC(float lon, float lat) для проверки, находится ли местоположение в пределах области Нью-Йорка.
 Фильтр со статистическим методом isInNYC возращает true - если началньная и конечная точка поездки располагается в Нью-Йорке.
 
 ```java
 public boolean filter(TaxiRide taxiRide) throws Exception {
-			return GeoUtils.isInNYC(taxiRide.startLon, taxiRide.startLat) && GeoUtils.isInNYC(taxiRide.endLon, taxiRide.endLat);
-		}
+	return GeoUtils.isInNYC(taxiRide.startLon, taxiRide.startLat) && GeoUtils.isInNYC(taxiRide.endLon, taxiRide.endLat);
+}
 ```
+# RidesAndFaresExercise
+
+Цель упражнения — объединить записи TaxiRide и TaxiFare для каждой поездки. Метод flatMap1 обрабатывает элементы типа TaxiRide, проверяем fareState, если существует значение — сбрасываем fareState, и создаём кортеж. Для flatMap2 производим аналогичные действия для TaxiFare.
+
+```java
+private ValueState<TaxiRide> rideState;
+private ValueState<TaxiFare> fareState;
+
+@Override
+public void open(Configuration config) throws Exception {
+	rideState = getRuntimeContext().getState(new ValueStateDescriptor<>("saved ride", TaxiRide.class));
+	fareState = getRuntimeContext().getState(new ValueStateDescriptor<>("saved fare", TaxiFare.class));
+}
+
+@Override
+public void flatMap1(TaxiRide ride, Collector<Tuple2<TaxiRide, TaxiFare>> out) throws Exception {
+	if (fareState.value() != null) {
+		fareState.clear();
+		out.collect(new Tuple2<>(ride, fareState.value()));
+	} else {
+		rideState.update(ride);
+	}
+}
+
+@Override
+public void flatMap2(TaxiFare fare, Collector<Tuple2<TaxiRide, TaxiFare>> out) throws Exception {
+	if (rideState.value() != null) {
+		rideState.clear();
+		out.collect(new Tuple2<>(rideState.value(), fare));
+	} else {
+		fareState.update(fare);
+	}
+}
+```
+
+# 
