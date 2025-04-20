@@ -14,6 +14,7 @@ public boolean filter(TaxiRide taxiRide) throws Exception {
 }
 ```
 Тесты:
+
 ![image](https://github.com/user-attachments/assets/31dc50c7-1959-485e-bcba-a2485add11ae)
 
 
@@ -33,9 +34,10 @@ public void open(Configuration config) throws Exception {
 
 @Override
 public void flatMap1(TaxiRide ride, Collector<Tuple2<TaxiRide, TaxiFare>> out) throws Exception {
-	if (fareState.value() != null) {
+	TaxiFare fare = fareState.value();
+	if (fare != null) {
 		fareState.clear();
-		out.collect(new Tuple2<>(ride, fareState.value()));
+		out.collect(new Tuple2<>(ride, fare));
 	} else {
 		rideState.update(ride);
 	}
@@ -43,13 +45,19 @@ public void flatMap1(TaxiRide ride, Collector<Tuple2<TaxiRide, TaxiFare>> out) t
 
 @Override
 public void flatMap2(TaxiFare fare, Collector<Tuple2<TaxiRide, TaxiFare>> out) throws Exception {
-	if (rideState.value() != null) {
+	TaxiRide ride = rideState.value();
+	if (ride != null) {
 		rideState.clear();
-		out.collect(new Tuple2<>(rideState.value(), fare));
+		out.collect(new Tuple2<>(ride, fare));
 	} else {
 		fareState.update(fare);
 	}
 }
 ```
+
+Тесты:
+
+![image](https://github.com/user-attachments/assets/013dfe34-2718-47ed-b36d-cff7c8e5f33a)
+
 
 # 
