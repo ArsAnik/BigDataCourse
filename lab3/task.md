@@ -92,11 +92,52 @@ public static class CalcTips extends ProcessWindowFunction<
 
 # LongRidesExercise
 
-Цель — вывод предупреждения, когда поездка на такси длится более двух часов.
+Цель — вывод предупреждения, когда поездка на такси длится более двух часов. Группируем по поездке и применяем функцию MatchFunction, используем состояние и таймер для отслеживания времени поездки.
 
 ```java
+DataStream<TaxiRide> longRides = rides
+				.keyBy(ride -> ride.rideId) // группировка по поездке
+				.process(new MatchFunction());
+```
 
+```java
+public static class MatchFunction extends KeyedProcessFunction<Long, TaxiRide, TaxiRide> {
+
+	private ValueState<TaxiRide> rideState;
+
+	@Override
+	public void open(Configuration config) throws Exception {
+		ValueStateDescriptor<TaxiRide> startDescriptor =
+				new ValueStateDescriptor<>("saved ride", TaxiRide.class);
+		rideState = getRuntimeContext().getState(startDescriptor); // создание состояния для хранения данных о поездке
+	}
+
+	@Override
+	public void processElement(TaxiRide ride, Context context, Collector<TaxiRide> out) throws Exception {
+		TimerService timerService = context.timerService();
+
+		if (ride.isStart) { // Если начало поездки
+			if (rideState.value() == null) {
+				rideState.update(ride);
+			}
+		} else { // завершение
+			rideState.update(ride);
+		}
+		// Через 2 часа после начала поездки проверить, была ли она завершена
+		timerService.registerEventTimeTimer(ride.getEventTime() + 120 * 60 * 1000);
+	}
+
+	@Override
+	public void onTimer(long timestamp, OnTimerContext context, Collector<TaxiRide> out) throws Exception {
+		TaxiRide savedRide = rideState.value(); // Извлекаем сохраненную поездку
+		if (savedRide != null && savedRide.isStart) {
+			out.collect(savedRide); // отправляем информацию, если не завершена
+		}
+		rideState.clear();
+	}
+}
 ```
 
 Тесты:
 
+![image](https://github.com/user-attachments/assets/069de069-e555-42e5-8f78-059f59aa1052)
