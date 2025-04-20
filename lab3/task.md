@@ -13,6 +13,10 @@ public boolean filter(TaxiRide taxiRide) throws Exception {
 	return GeoUtils.isInNYC(taxiRide.startLon, taxiRide.startLat) && GeoUtils.isInNYC(taxiRide.endLon, taxiRide.endLat);
 }
 ```
+Тесты:
+![image](https://github.com/user-attachments/assets/31dc50c7-1959-485e-bcba-a2485add11ae)
+
+
 # RidesAndFaresExercise
 
 Цель упражнения — объединить записи TaxiRide и TaxiFare для каждой поездки. Метод flatMap1 обрабатывает элементы типа TaxiRide, проверяем fareState, если существует значение — сбрасываем fareState, и создаём кортеж. Для flatMap2 производим аналогичные действия для TaxiFare.
