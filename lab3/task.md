@@ -59,5 +59,44 @@ public void flatMap2(TaxiFare fare, Collector<Tuple2<TaxiRide, TaxiFare>> out) t
 
 ![image](https://github.com/user-attachments/assets/013dfe34-2718-47ed-b36d-cff7c8e5f33a)
 
+# HourlyTipsExercise
 
-# 
+Задача — определить водителя, который получает больше всего чаевых в час. Для этого по всем чаевым проводится группировка по водителю, за 1 час и применяется функция CalcTips - общая сумма чаевых за 1 час.
+
+```java
+DataStream<Tuple3<Long, Long, Float>> hourlyMax = fares
+				.keyBy((TaxiFare fare) -> fare.driverId) // группируем поездки по водителю
+				.timeWindow(Time.hours(1)) // окно времени - 1 час
+				.process(new CalcTips()) // применяем функцию CalcTips
+				.timeWindowAll(Time.hours(1)) // применяем функцию для 1 часа
+				.maxBy(2); // максимизация по третьему элементу в кортеже - по сумме чаевых
+```
+
+```java
+public static class CalcTips extends ProcessWindowFunction<
+		TaxiFare, Tuple3<Long, Long, Float>, Long, TimeWindow> {
+	@Override
+	public void process(Long key, Context context, Iterable<TaxiFare> fares, Collector<Tuple3<Long, Long, Float>> out) throws Exception {
+		Float sumOfTips = Float.valueOf(0);
+		for (TaxiFare fare : fares) {
+			sumOfTips += fare.tip;
+		}
+		out.collect(new Tuple3<>(context.window().getEnd(), key, sumOfTips));
+	}
+}
+```
+
+Тесты:
+
+![image](https://github.com/user-attachments/assets/6aec8d46-a3f9-4d71-a46a-d4b031b38aea)
+
+# LongRidesExercise
+
+Цель — вывод предупреждения, когда поездка на такси длится более двух часов.
+
+```java
+
+```
+
+Тесты:
+
